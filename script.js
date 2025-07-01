@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     connectControls(deltaTInput, deltaTSlider);
     connectControls(diameterInput, diameterSlider);
 
-    // Funktion für den "v auf 1.0 m/s setzen" Button
+    // KORRIGIERTE Funktion für den Button
     setVelocityBtn.addEventListener('click', () => {
         const targetVelocity = 1.0;
         const diameterMm = parseFloat(diameterSlider.value);
@@ -166,6 +166,26 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const min = parseFloat(volumeFlowSlider.min);
         const max = parseFloat(volumeFlowSlider.max);
+        
+        // PRÜFUNG: Liegt der berechnete Wert im erlaubten Bereich?
+        if (volumeFlowLpm < min || volumeFlowLpm > max) {
+            const originalText = setVelocityBtn.textContent;
+            setVelocityBtn.textContent = "Wert außerhalb des Bereichs!";
+            setVelocityBtn.disabled = true;
+            setVelocityBtn.classList.add('bg-red-500', 'hover:bg-red-600');
+            setVelocityBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            
+            setTimeout(() => {
+                setVelocityBtn.textContent = originalText;
+                setVelocityBtn.disabled = false;
+                setVelocityBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+                setVelocityBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+            }, 3000);
+            
+            return; // Breche die weitere Ausführung ab
+        }
+
+        // Wenn der Wert im Bereich liegt, fahre fort wie bisher
         const step = parseFloat(volumeFlowSlider.step);
         const sanitizedVolume = sanitizeValue(volumeFlowLpm, min, max, step);
 
