@@ -127,25 +127,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function connectControls(inputElement, sliderElement) {
+        // When the slider is moved, update the input field and all outputs.
         sliderElement.addEventListener('input', () => {
-            inputElement.value = sliderElement.value;
+            inputElement.value = parseFloat(sliderElement.value).toFixed(1);
             updateAllOutputs();
         });
-        inputElement.addEventListener('input', () => {
-            const value = parseFloat(inputElement.value);
-            if (!isNaN(value)) {
-                sliderElement.value = value;
-                updateAllOutputs();
-            }
-        });
-        inputElement.addEventListener('blur', () => {
+
+        // When the user is done typing in the input field (blur or enter),
+        // sanitize the value and update the slider, which then triggers the update.
+        inputElement.addEventListener('change', () => {
             const min = parseFloat(sliderElement.min);
             const max = parseFloat(sliderElement.max);
             const step = parseFloat(sliderElement.step);
+            
             const sanitized = sanitizeValue(inputElement.value, min, max, step);
-            inputElement.value = sanitized.toFixed(1);
+            
             sliderElement.value = sanitized;
-            updateAllOutputs();
+            // Manually trigger the 'input' event on the slider to ensure the UI updates consistently.
+            sliderElement.dispatchEvent(new Event('input'));
         });
     }
 
@@ -162,13 +161,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const radiusM = diameterMm / 2 / 1000;
         const areaM2 = Math.PI * Math.pow(radiusM, 2);
         const volumeFlowM3s = targetVelocity * areaM2;
-        const volumeFlowLpm = volumeFlowM3s * 3600 * 1000 / 60;
+        const requiredVolumeFlowLpm = volumeFlowM3s * 3600 * 1000 / 60;
         
         const min = parseFloat(volumeFlowSlider.min);
         const max = parseFloat(volumeFlowSlider.max);
         
         // PRÜFUNG: Liegt der berechnete Wert im erlaubten Bereich?
-        if (volumeFlowLpm < min || volumeFlowLpm > max) {
+        if (requiredVolumeFlowLpm < min || requiredVolumeFlowLpm > max) {
             const originalText = setVelocityBtn.textContent;
             setVelocityBtn.textContent = "Wert außerhalb des Bereichs!";
             setVelocityBtn.disabled = true;
@@ -180,18 +179,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 setVelocityBtn.disabled = false;
                 setVelocityBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
                 setVelocityBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-            }, 3000);
+            }, 2500);
             
             return; // Breche die weitere Ausführung ab
         }
 
-        // Wenn der Wert im Bereich liegt, fahre fort wie bisher
-        const step = parseFloat(volumeFlowSlider.step);
-        const sanitizedVolume = sanitizeValue(volumeFlowLpm, min, max, step);
-
-        volumeFlowSlider.value = sanitizedVolume;
-        volumeFlowInput.value = sanitizedVolume.toFixed(1);
-        updateAllOutputs();
+        // Wenn der Wert im Bereich liegt, setze den Slider und löse ein Update aus.
+        volumeFlowSlider.value = requiredVolumeFlowLpm;
+        volumeFlowSlider.dispatchEvent(new Event('input'));
     });
 
     // --- Reset and Initialization ---
@@ -200,11 +195,10 @@ document.addEventListener('DOMContentLoaded', () => {
         deltaTSlider.value = DEFAULT_VALUES.deltaT;
         diameterSlider.value = DEFAULT_VALUES.diameter;
         
-        volumeFlowInput.value = DEFAULT_VALUES.volumeFlow.toFixed(1);
-        deltaTInput.value = DEFAULT_VALUES.deltaT.toFixed(1);
-        diameterInput.value = DEFAULT_VALUES.diameter.toFixed(1);
-        
-        updateAllOutputs();
+        // Manually trigger the 'input' event for all sliders to sync the UI completely.
+        volumeFlowSlider.dispatchEvent(new Event('input'));
+        deltaTSlider.dispatchEvent(new Event('input'));
+        diameterSlider.dispatchEvent(new Event('input'));
     }
 
     resetBtn.addEventListener('click', resetToDefaults);
