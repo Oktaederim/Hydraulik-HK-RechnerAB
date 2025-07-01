@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     connectControls(deltaTInput, deltaTSlider);
     connectControls(diameterInput, diameterSlider);
 
-    // KORRIGIERTE Funktion für den Button
+    // Funktion für den "v auf 1.0 m/s setzen" Button
     setVelocityBtn.addEventListener('click', () => {
         const targetVelocity = 1.0;
         const diameterMm = parseFloat(diameterSlider.value);
@@ -163,29 +163,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const volumeFlowM3s = targetVelocity * areaM2;
         const requiredVolumeFlowLpm = volumeFlowM3s * 3600 * 1000 / 60;
         
+        // Da die Untergrenze des Durchmessers jetzt sicherstellt, dass der Wert immer im Bereich ist,
+        // können wir den Wert direkt setzen und die UI aktualisieren.
         const min = parseFloat(volumeFlowSlider.min);
         const max = parseFloat(volumeFlowSlider.max);
-        
-        // PRÜFUNG: Liegt der berechnete Wert im erlaubten Bereich?
-        if (requiredVolumeFlowLpm < min || requiredVolumeFlowLpm > max) {
-            const originalText = setVelocityBtn.textContent;
-            setVelocityBtn.textContent = "Wert außerhalb des Bereichs!";
-            setVelocityBtn.disabled = true;
-            setVelocityBtn.classList.add('bg-red-500', 'hover:bg-red-600');
-            setVelocityBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
-            
-            setTimeout(() => {
-                setVelocityBtn.textContent = originalText;
-                setVelocityBtn.disabled = false;
-                setVelocityBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
-                setVelocityBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-            }, 2500);
-            
-            return; // Breche die weitere Ausführung ab
-        }
+        const step = parseFloat(volumeFlowSlider.step);
+        const sanitizedVolume = sanitizeValue(requiredVolumeFlowLpm, min, max, step);
 
-        // Wenn der Wert im Bereich liegt, setze den Slider und löse ein Update aus.
-        volumeFlowSlider.value = requiredVolumeFlowLpm;
+        volumeFlowSlider.value = sanitizedVolume;
         volumeFlowSlider.dispatchEvent(new Event('input'));
     });
 
